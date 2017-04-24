@@ -1,0 +1,147 @@
+swagger: '2.0'
+info:
+  title: Street Maintenance API
+  description: Street Maintenance API allows querying the locations of the street maintenance vehicles in the Turku area. Only part on vehicles are covered. 
+  
+    API is compatible and based on [Snowplow API](https://github.com/City-of-Helsinki/aura/wiki/API).
+    
+    
+    **Examples:**
+    
+    
+    List of Street maintenance vehicles [https://api.turku.fi/street-maintenance/v1/vehicles/](https://api.turku.fi/street-maintenance/v1/vehicles/)
+    
+    
+    Location history of vehicle 8 [https://api.turku.fi/street-maintenance/v1/vehicles/8?history=10](https://api.turku.fi/street-maintenance/v1/vehicles/8?history=10)
+    
+    
+    **Visualization:**
+    
+    
+    [Maintenance map](https://dev.turku.fi/maintenance-map/)
+    
+    
+    **License:**
+    
+    
+    Data is licensed using [CC BY 4.0 license](https://creativecommons.org/licenses/by/4.0/).
+    
+    
+    **Feedback:**
+    
+    
+    To help improve the API, please don’t hesitate to [comment, give feedback or make suggestions](mailto:avoindata@turku.fi).
+    
+  version: "1.0.0"
+host: api.turku.fi
+basePath: /street-maintenance/v1
+schemes:
+  - https
+produces:
+  - application/json
+  - text/html
+paths:
+  /vehicles/:
+    get:
+      description: Get a list of maintenance vehicles containing their latest locations.
+      parameters:
+        - name: limit
+          in: query
+          description: Number of vehicles to return.
+          type: integer
+          default: 10
+        - name: since
+          in: query
+          description: Return only vehicles that have been updated since this value. Can be a timestamp or a relative time.
+          type: string
+      responses:
+        200:
+          description: Vehicles matching the query or 10 most recently updated ones by default.
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Vehicle'
+  /vehicles/{vehicle_id}/:
+    get:
+      description: Get detail information about a maintenance vehicle.
+      parameters:
+        - name: vehicle_id
+          in: path
+          required: true
+          description: ID of the vehicle to fetch.
+          type: integer
+        - name: history
+          in: query
+          description: Number of locations to return in the location history.
+          type: integer
+        - name: since
+          in: query
+          description: Return only locations newer than this value. Can be a timestamp or a relative time.
+          type: string
+        - name: temporal resolution
+          in: query
+          description: Return locations in the location history at least this many seconds apart.
+          type: integer
+      responses:
+        200:
+          description: The requested vehicle.
+          schema:
+            $ref: '#/definitions/Vehicle'
+definitions:
+  Vehicle:
+    type: object
+    example:
+      id: 123
+      last_location:
+        timestamp: "2017-03-22T16:20:53+02:00"
+        coords: [22.1832284135991, 60.4538416572538]
+        events: ["hj"]
+      location_history: []
+    properties:
+      id:
+        description: Unique ID of the vehicle.
+        type: integer
+      last_location:
+        $ref: '#/definitions/Location'
+        description: The latest available location of the vehicle.
+      location_history:
+        description: Location history of the vehicle.
+        type: array
+        items:
+          $ref: '#/definitions/Location'
+  Location:
+    description: A vehicle's location information in the past containing the events of that time.
+    type: object
+    example:
+      timestamp: "2017-03-22T16:20:53+02:00"
+      coords: [22.1832284135991, 60.4538416572538]
+      events: ["hj"]
+    properties:
+      timestamp:
+        description: Timestamp of the location in ISO-8601 format.
+        type: string
+        format: dateTime
+      coords:
+        description: GPS coordinates of the location.
+        type: array
+        items:
+          type: number
+          format: float
+      events:
+        type: array
+        items:
+          $ref: '#/definitions/Event'
+  Event:
+    description: |
+      Activity a vehicle was performing at a location. Values:
+
+      "au": Snow removal (auraus)
+      "su": De-icing with salt (suolaus)
+      "hi": Spreading sand (hiekoitus)
+      "hs": Planing (höyläys)
+      "pe": Street washing (kadunpesu)
+      "hn": Sand removal (hiekannosto)
+      "hj": Brushing (harjaus)
+
+    type: string
+
